@@ -50,6 +50,14 @@ const UserDashboard = () => {
             <span className="hidden sm:block">Reserve Book</span>
           </Link>
           <Link
+            to="/add-book"
+            className={`flex items-center space-x-2 w-full py-3 px-4 text-left ${activeTab === 'orders' ? 'bg-blue-700' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <FaShoppingCart size={20} />
+            <span className="hidden sm:block">Add Book</span>
+          </Link>
+          <Link
             to="/"
             className={`flex items-center space-x-2 w-full py-3 px-4 text-left ${activeTab === 'orders' ? 'bg-blue-700' : ''}`}
             onClick={() => setActiveTab('orders')}

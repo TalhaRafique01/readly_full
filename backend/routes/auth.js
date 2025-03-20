@@ -94,9 +94,22 @@ router.post('/forgot-password', async (req, res) => {
         const mailOptions = {
             to: user.email,
             from: process.env.EMAIL,
-            subject: 'Password Reset',
-            text: `Click the following link to reset your password: ${process.env.CLIENT_URL}/reset-password/${resetToken}`,
+            subject: 'Password Reset Request',
+            html: `
+                <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+                    <h2 style="color: #d63031;">Password Reset Request</h2>
+                    <p>Hello,</p>
+                    <p>We received a request to reset your password. Click the button below to proceed:</p>
+                    <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}" 
+                       style="display: inline-block; padding: 10px 20px; margin: 10px 0; background-color: #0984e3; color: #fff; text-decoration: none; border-radius: 5px;">
+                       Reset Password
+                    </a>
+                    <p>If you did not request this, please ignore this email. This link will expire in 1 hour.</p>
+                    <p>Thank you</p>
+                </div>
+            `,
         };
+        
 
         await transporter.sendMail(mailOptions);
         res.json({ message: 'Password reset email sent' });

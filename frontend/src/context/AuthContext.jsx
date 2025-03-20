@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser({ token: data.token, ...data.user });
-        navigate("/dashboard");
+        navigate("/user");
       } else {
         throw new Error(data.error || "Invalid login credentials.");
       }
