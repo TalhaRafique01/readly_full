@@ -5,6 +5,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const passport = require('../config/passport');
+
 
 // Signup
 router.post('/signup', async (req, res) => {
@@ -48,10 +50,11 @@ router.post('/login', async (req, res) => {
         if (!user) {
             return res.status(400).json({ message: 'User not found' });
         }
-        console.log("Entered password:", password);
-        console.log("Stored password (hashed):", user.password);
+        if (user.isOAuth) {
+            return res.status(400).json({ message: 'Please log in using Google OAuth' });
+        }        
+
         const isMatch = await bcrypt.compare(password.trim(), user.password);
-        console.log("Password match result:", isMatch);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -83,8 +86,8 @@ router.post('/forgot-password', async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-                user: process.env.EMAIL,
-                pass: process.env.EMAIL_PASSWORD,
+                user: process.env.SMTP_HOST,
+                pass: process.env.SMTP_PASSWORD,
             },
         });
 
@@ -105,6 +108,7 @@ router.post('/forgot-password', async (req, res) => {
 // Reset Password
 router.post('/reset-password/:token', async (req, res) => {
     try {
+        console.log("Reset Password Token:", req.params.token);
         const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
         const user = await User.findOne({
             resetPasswordToken: hashedToken,
@@ -115,7 +119,7 @@ router.post('/reset-password/:token', async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired token' });
         }
 
-        user.password = await bcrypt.hash(req.body.password, 10);
+        user.password = req.body.password;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
@@ -125,5 +129,23 @@ router.post('/reset-password/:token', async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 });
+
+// Google OAuth
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google OAuth Callback Route
+router.get(
+    '/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
+
+        // Redirect to frontend with token and user info
+        res.redirect(`${process.env.CLIENT_URL}/auth-success?token=${token}&name=${req.user.name}&email=${req.user.email}`);
+    }
+);
+
 
 module.exports = router;

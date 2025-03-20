@@ -1,27 +1,37 @@
-require('dotenv').config(); // Load environment variables at the top
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session'); 
 const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
+const authenticateUser = require('./middleware/authMiddleware');
+const passport = require('passport');
 
-// Connect to MongoDB
+
 connectDB();
 
-// Initialize Express app
 const app = express();
-// Middleware
 app.use(cors());
-app.use(express.json()); // Express has built-in JSON parsing
-app.use(bodyParser.urlencoded({ extended: true })); // Support URL-encoded bodies
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Routes
 app.use('/api/auth', authRoutes);
 
-// Root Route
 app.get('/', (req, res) => {
-    res.send('Welcome to the EV Charging Station API!');
+    res.send('Working APIIIIII!');
+});
+
+app.get('/protected-route', authenticateUser, (req, res) => {
+    res.json({ message: 'Access granted!', user: req.user });
 });
 
 // Start server
